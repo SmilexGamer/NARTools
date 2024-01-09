@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NARToolLib", "NARToolLib\NARToolLib.csproj", "{ECB81F73-0FA2-4658-A43F-8C6D11111F47}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Extractor", "NARExtractor\Extractor.csproj", "{AB35F936-392B-48EA-9CC1-575195AEA752}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModelDecryptor", "ModelDecryptor\ModelDecryptor.csproj", "{EE5F914A-56EE-4DDA-A38E-E5A875468FC9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompressionTest", "CompressionTest\CompressionTest.csproj", "{ED30A584-DD0A-470D-9679-ABCA8A0F5472}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{ECB81F73-0FA2-4658-A43F-8C6D11111F47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECB81F73-0FA2-4658-A43F-8C6D11111F47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECB81F73-0FA2-4658-A43F-8C6D11111F47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECB81F73-0FA2-4658-A43F-8C6D11111F47}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB35F936-392B-48EA-9CC1-575195AEA752}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB35F936-392B-48EA-9CC1-575195AEA752}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB35F936-392B-48EA-9CC1-575195AEA752}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB35F936-392B-48EA-9CC1-575195AEA752}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE5F914A-56EE-4DDA-A38E-E5A875468FC9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE5F914A-56EE-4DDA-A38E-E5A875468FC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE5F914A-56EE-4DDA-A38E-E5A875468FC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE5F914A-56EE-4DDA-A38E-E5A875468FC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED30A584-DD0A-470D-9679-ABCA8A0F5472}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED30A584-DD0A-470D-9679-ABCA8A0F5472}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED30A584-DD0A-470D-9679-ABCA8A0F5472}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED30A584-DD0A-470D-9679-ABCA8A0F5472}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
