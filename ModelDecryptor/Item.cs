@@ -97,7 +97,6 @@ namespace Nexon.CSO.ModelDecryptor
                 tempFile = new FileInfo(Path.Combine(Path.GetDirectoryName(file.DirectoryName), Path.ChangeExtension(Path.GetTempFileName(), ".mdl")));
             } while (tempFile.Exists);
             file.CopyTo(tempFile.FullName);
-            tempFile.Attributes = FileAttributes.Hidden | FileAttributes.Temporary;
 
             try
             {

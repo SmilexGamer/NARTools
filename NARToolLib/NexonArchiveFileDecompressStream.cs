@@ -29,6 +29,7 @@ namespace Nexon
 
         private bool leaveOpen;
         private Stream baseStream;
+        private long outputLength;
 
         // This could also be called the "window"... but dictionary is probably
         // more accurate.
@@ -40,12 +41,12 @@ namespace Nexon
 
         #region Constructors
 
-        public NexonArchiveFileDecompressStream(Stream stream)
-            : this(stream, false)
+        public NexonArchiveFileDecompressStream(Stream stream, long length)
+            : this(stream, length, false)
         {
         }
 
-        public NexonArchiveFileDecompressStream(Stream stream, bool leaveOpen)
+        public NexonArchiveFileDecompressStream(Stream stream, long length, bool leaveOpen)
         {
             if (stream == null)
                 throw new ArgumentNullException("stream");
@@ -53,6 +54,7 @@ namespace Nexon
                 throw new ArgumentException("Cannot read from stream.", "stream");
 
             this.baseStream = stream;
+            this.outputLength = length;
             this.leaveOpen = leaveOpen;
         }
 
@@ -82,7 +84,7 @@ namespace Nexon
 
         public override long Length
         {
-            get { throw new NotSupportedException(); }
+            get { return this.outputLength; }
         }
 
         public override long Position

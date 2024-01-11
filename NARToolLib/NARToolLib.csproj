@@ -51,6 +51,7 @@
     <Compile Include="ModelHelper.cs" />
     <Compile Include="NexonArchive.cs" />
     <Compile Include="NexonArchiveFileCompressStream.cs" />
+    <Compile Include="NexonArchiveFileEncoderStream.cs" />
     <Compile Include="NexonArchiveFileEntry.cs" />
     <Compile Include="NexonArchiveFileEntryType.cs" />
     <Compile Include="NexonArchiveFileDecoderStream.cs" />

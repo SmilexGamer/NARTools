@@ -23,6 +23,9 @@
     <Setting Name="ColumnSizeWidth" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">-1</Value>
     </Setting>
+    <Setting Name="ColumnStoredTypeWidth" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">-1</Value>
+    </Setting>
     <Setting Name="ColumnNamePosition" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">-1</Value>
     </Setting>
@@ -30,6 +33,9 @@
       <Value Profile="(Default)">-1</Value>
     </Setting>
     <Setting Name="ColumnSizePosition" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">-1</Value>
+    </Setting>
+    <Setting Name="ColumnStoredTypePosition" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">-1</Value>
     </Setting>
     <Setting Name="SortColumn" Type="System.Int32" Scope="User">

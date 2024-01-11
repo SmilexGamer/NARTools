@@ -106,7 +106,7 @@ namespace Nexon
             try
             {
                 int pathSize = BitConverter.ToUInt16(header, offset);
-                this.path = Encoding.ASCII.GetString(header, offset + 2, pathSize);
+                this.path = Encoding.GetEncoding("euc-kr").GetString(header, offset + 2, pathSize);
                 this.storedType = (NexonArchiveFileEntryType)BitConverter.ToInt32(header, offset + 2 + pathSize);
                 this.offset = BitConverter.ToUInt32(header, offset + 2 + pathSize + 4);
                 this.storedSize = BitConverter.ToInt32(header, offset + 2 + pathSize + 8);
@@ -149,7 +149,7 @@ namespace Nexon
                         break;
                     case NexonArchiveFileEntryType.EncodedAndCompressed:
                         readStream = new NexonArchiveFileDecompressStream(
-                            new NexonArchiveFileDecoderStream(readStream, this.path, false));
+                            new NexonArchiveFileDecoderStream(readStream, this.path, false), this.extractedSize);
                         break;
                     default:
                         throw new NotSupportedException("Unsupported file storage type: " + this.storedType + ".");

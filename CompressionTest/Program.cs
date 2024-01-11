@@ -33,7 +33,7 @@ namespace Nexon.CompressionTest
 
             using (FileStream fileStream = new FileStream(args[0], FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                byte[] buffer = new byte[4096];
+                byte[] buffer = new byte[8192];
                 int readLength;
 
                 byte[] fileStreamHash;
@@ -47,7 +47,7 @@ namespace Nexon.CompressionTest
                 {
                     using (NexonArchiveFileCompressStream compressorStream = new NexonArchiveFileCompressStream(compressedStream, true))
                     {
-                        while ((readLength = fileStream.Read(buffer, 0, 4096)) > 0)
+                        while ((readLength = fileStream.Read(buffer, 0, 8192)) > 0)
                         {
                             compressorStream.Write(buffer, 0, readLength);
                         }
@@ -58,9 +58,9 @@ namespace Nexon.CompressionTest
                     using (FileStream tempFileStream = new FileStream("decompressed.bin", FileMode.Create, FileAccess.ReadWrite, FileShare.Read))
                     {
                         compressedStream.Position = 0;
-                        using (NexonArchiveFileDecompressStream decompressorStream = new NexonArchiveFileDecompressStream(compressedStream, true))
+                        using (NexonArchiveFileDecompressStream decompressorStream = new NexonArchiveFileDecompressStream(compressedStream, readLength, true))
                         {
-                            while ((readLength = decompressorStream.Read(buffer, 0, 4096)) > 0)
+                            while ((readLength = decompressorStream.Read(buffer, 0, 8192)) > 0)
                             {
                                 tempFileStream.Write(buffer, 0, readLength);
                                 tempFileStream.Flush();

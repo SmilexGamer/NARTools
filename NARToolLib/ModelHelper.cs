@@ -66,7 +66,7 @@ namespace Nexon
 
         public static ModelResult DecryptModel(string path)
         {
-            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, 4096, FileOptions.RandomAccess))
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, 8192, FileOptions.RandomAccess))
             {
                 return DecryptModel(fs);
             }
@@ -232,12 +232,186 @@ namespace Nexon
 
             return ModelResult.Success;
         }
+
+        public static ModelResult EncryptModel(string path, int version)
+        {
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.Read, 8192, FileOptions.RandomAccess))
+            {
+                return EncryptModel(fs, version);
+            }
+        }
+
+        public static ModelResult EncryptModel(Stream stream, int encryptVersion)
+        {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+            if (!stream.CanRead)
+                throw new ArgumentException("Cannot read from stream.", "stream");
+            if (!stream.CanWrite)
+                throw new ArgumentException("Cannot write to stream.", "stream");
+            if (!stream.CanSeek)
+                throw new ArgumentException("Cannot seek in stream.", "stream");
+
+            // Seek to the beginning of the stream.
+            stream.Seek(0, SeekOrigin.Begin);
+
+            // Do not allow input files larger than the maximum integer size.
+            // Also do not allow inputs smaller than the header size (244 bytes).
+            if (stream.Length > int.MaxValue || stream.Length < 244)
+                return ModelResult.InvalidModel;
+
+            // Create a binary reader and binary writer.
+            BinaryReader reader = new BinaryReader(stream);
+            BinaryWriter writer = new BinaryWriter(stream);
+
+            int version;
+            try
+            {
+                // Check the file signature.
+                if (reader.ReadInt32() != 0x54534449)
+                    return ModelResult.InvalidModel;
+
+                // Get the file version.
+                version = reader.ReadInt32();
+
+                // Check if the file is already encrypted
+                if (version == 20 || version == 21)
+                    return ModelResult.AlreadyEncrypted;
+
+                // Check the file size. (Not sure if this should be checked before
+                // or after the version check.)
+                stream.Seek(72, SeekOrigin.Begin);
+                if (reader.ReadInt32() < stream.Length)
+                    return ModelResult.InvalidModel;
+            }
+            catch (EndOfStreamException)
+            {
+                return ModelResult.InvalidModel;
+            }
+
+            // Initialize algorithm and other parameters. (They may change
+            // between model versions.)
+            SymmetricAlgorithm algorithm = null;
+            switch (encryptVersion)
+            {
+                case 20:
+                    algorithm = new Ice(4);
+                    algorithm.Key = Version20Key;
+                    break;
+                case 21:
+                    algorithm = new Ice(4);
+                    algorithm.Key = Version21Key;
+                    break;
+                default:
+                    return ModelResult.NotEncrypted;
+            }
+            System.Diagnostics.Debug.Assert(algorithm != null);
+
+            using (algorithm)
+            {
+                // Get the decryption transform.
+                using (ICryptoTransform transform = algorithm.CreateEncryptor())
+                {
+                    // Set the version number (to an encrypted one).
+                    stream.Seek(4, SeekOrigin.Begin);
+                    writer.Write(encryptVersion);
+
+                    try
+                    {
+                        // Get textures info.
+                        stream.Seek(180, SeekOrigin.Begin);
+                        int numTextures = reader.ReadInt32();
+                        int textureIndex = reader.ReadInt32();
+                        // Enumerate textures.
+                        for (int i = 0; i < numTextures && textureIndex >= 0; ++i, textureIndex += 80)
+                        {
+                            try
+                            {
+                                stream.Seek(textureIndex + 68, SeekOrigin.Begin);
+                                int width = reader.ReadInt32();
+                                int height = reader.ReadInt32();
+                                int index = reader.ReadInt32();
+                                if (width < 0 || height < 0 || index < 0)
+                                    continue;
+
+                                // Encrypt texture data.
+                                stream.Seek(index, SeekOrigin.Begin);
+                                byte[] textureData = reader.ReadBytes((width * height) + 768);
+                                TransformChunk(transform, textureData, 0, textureData.Length);
+                                stream.Seek(index, SeekOrigin.Begin);
+                                writer.Write(textureData, 0, textureData.Length);
+                            }
+                            catch (EndOfStreamException)
+                            {
+                            }
+                        }
+                    }
+                    catch (EndOfStreamException)
+                    {
+                    }
+
+                    try
+                    {
+                        // Get body parts info.
+                        stream.Seek(204, SeekOrigin.Begin);
+                        int numBodyParts = reader.ReadInt32();
+                        int bodyPartIndex = reader.ReadInt32();
+                        // Encrypt body parts.
+                        for (int i = 0; i < numBodyParts && bodyPartIndex >= 0; ++i, bodyPartIndex += 76)
+                        {
+                            try
+                            {
+                                stream.Seek(bodyPartIndex + 64, SeekOrigin.Begin);
+                                int numModels = reader.ReadInt32();
+                                stream.Seek(4, SeekOrigin.Current); // unused field
+                                int modelIndex = reader.ReadInt32();
+                                if (modelIndex < 0)
+                                    continue;
+
+                                // Enumerate models.
+                                for (int j = 0; j < numModels && modelIndex >= 0; ++j, modelIndex += 112)
+                                {
+                                    try
+                                    {
+                                        stream.Seek(modelIndex + 80, SeekOrigin.Begin);
+                                        int numVerts = reader.ReadInt32();
+                                        stream.Seek(4, SeekOrigin.Current); // unused field
+                                        int vertsIndex = reader.ReadInt32();
+                                        if (vertsIndex < 0)
+                                            continue;
+
+                                        // Encrypt verticies.
+                                        stream.Seek(vertsIndex, SeekOrigin.Begin);
+                                        byte[] vertexData = reader.ReadBytes(numVerts * 12);
+                                        TransformChunk(transform, vertexData, 0, vertexData.Length);
+                                        stream.Seek(vertsIndex, SeekOrigin.Begin);
+                                        writer.Write(vertexData, 0, vertexData.Length);
+                                    }
+                                    catch (EndOfStreamException)
+                                    {
+                                    }
+                                }
+                            }
+                            catch (EndOfStreamException)
+                            {
+                            }
+                        }
+                    }
+                    catch (EndOfStreamException)
+                    {
+                    }
+                }
+            }
+
+            return ModelResult.Success;
+        }
     }
 
     public enum ModelResult
     {
         Success = 0,
         InvalidModel,
+        AlreadyEncrypted,
         NotEncrypted,
     }
 }

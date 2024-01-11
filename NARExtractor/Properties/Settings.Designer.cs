@@ -110,6 +110,18 @@ namespace Nexon.Extractor.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public int ColumnStoredTypeWidth {
+            get {
+                return ((int)(this["ColumnStoredTypeWidth"]));
+            }
+            set {
+                this["ColumnStoredTypeWidth"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-1")]
         public int ColumnNamePosition {
             get {
                 return ((int)(this["ColumnNamePosition"]));
@@ -140,6 +152,18 @@ namespace Nexon.Extractor.Properties {
             }
             set {
                 this["ColumnSizePosition"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public int ColumnStoredTypePosition {
+            get {
+                return ((int)(this["ColumnStoredTypePosition"]));
+            }
+            set {
+                this["ColumnStoredTypePosition"] = value;
             }
         }
         

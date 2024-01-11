@@ -122,7 +122,7 @@ namespace Nexon
                 throw new ArgumentNullException("buffer");
             if (offset < 0)
                 throw new ArgumentOutOfRangeException("offset");
-            if (count < 0 || (offset + count) > buffer.Length || count > this.length)
+            if (count < 0 || (offset + count) > buffer.Length /* || count > this.length */) // TODO: This is a hacky way and it should be fixed ASAP
                 throw new ArgumentOutOfRangeException("count");
             if (distance <= 0 || distance > this.length)
                 throw new ArgumentOutOfRangeException("distance");

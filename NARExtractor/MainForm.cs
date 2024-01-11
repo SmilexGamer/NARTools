@@ -121,6 +121,10 @@ namespace Nexon.Extractor
                 this.listView.Columns[2].Width = settings.ColumnSizeWidth;
             if (settings.ColumnSizePosition >= 0)
                 this.listView.Columns[2].DisplayIndex = settings.ColumnSizePosition;
+            if (settings.ColumnStoredTypeWidth >= 0)
+                this.listView.Columns[2].Width = settings.ColumnStoredTypeWidth;
+            if (settings.ColumnStoredTypePosition >= 0)
+                this.listView.Columns[2].DisplayIndex = settings.ColumnStoredTypePosition;
             if (settings.SortColumn >= 0)
             {
                 this.listView.SortColumn = settings.SortColumn;
@@ -162,6 +166,8 @@ namespace Nexon.Extractor
             settings.ColumnLastModifiedPosition = this.listView.Columns[1].DisplayIndex;
             settings.ColumnSizeWidth = this.listView.Columns[2].Width;
             settings.ColumnSizePosition = this.listView.Columns[2].DisplayIndex;
+            settings.ColumnStoredTypeWidth = this.listView.Columns[2].Width;
+            settings.ColumnStoredTypePosition = this.listView.Columns[2].DisplayIndex;
             settings.SortColumn = this.listView.SortColumn;
             settings.SortColumnOrder = this.listView.SortColumnOrder;
             settings.AutoDecryptModels = this.autoDecryptModelsToolStripMenuItem.Checked;

@@ -244,6 +244,7 @@ namespace Nexon.Extractor
 
             item.SubItems.Add(file.LastModifiedTime.ToString(DateTimeFormatInfo.CurrentInfo));
             item.SubItems.Add(GetHumanSize(file.Size));
+            item.SubItems.Add(file.StoredType.ToString());
 
             this.Items.Add(item);
             return item;
@@ -357,6 +358,11 @@ namespace Nexon.Extractor
                         if (xFile == null || yFile == null)
                             goto default;
                         value = xFile.Size.CompareTo(yFile.Size);
+                        break;
+                    case 3: // StoreType
+                        if (xFile == null || yFile == null)
+                            goto default;
+                        value = xFile.StoredType.CompareTo(yFile.StoredType);
                         break;
                     default:
                         // TODO: Use a natural string comparison algorithm.

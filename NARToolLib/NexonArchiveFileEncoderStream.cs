@@ -19,14 +19,12 @@ using System.Text;
 
 namespace Nexon
 {
-    public sealed class NexonArchiveFileDecoderStream : Stream
+    public sealed class NexonArchiveFileEncoderStream : Stream
     {
         #region Fields
 
         private const int KeySize = 16;
 
-        private bool leaveOpen;
-        private bool encode;
         private Stream baseStream;
         private byte[] key = new byte[KeySize];
 
@@ -34,32 +32,14 @@ namespace Nexon
 
         #region Constructors
 
-        public NexonArchiveFileDecoderStream(Stream stream, string path, bool encode)
-            : this(stream, path, encode, false)
-        {
-        }
-
-        public NexonArchiveFileDecoderStream(Stream stream, string path, bool encode, bool leaveOpen)
+        public NexonArchiveFileEncoderStream(Stream stream, string path)
         {
             if (stream == null)
                 throw new ArgumentNullException("stream");
             if (path == null)
                 throw new ArgumentNullException("path");
 
-            if (encode)
-            {
-                if (!stream.CanWrite)
-                    throw new ArgumentException("Cannot write to stream.");
-            }
-            else
-            {
-                if (!stream.CanRead)
-                    throw new ArgumentException("Cannot read from stream.");
-            }
-
-            this.encode = encode;
             this.baseStream = stream;
-            this.leaveOpen = leaveOpen;
 
             this.GenerateKey(path);
         }
@@ -75,7 +55,7 @@ namespace Nexon
 
         public override bool CanRead
         {
-            get { return !this.encode; }
+            get { return true; }
         }
 
         public override bool CanSeek
@@ -85,7 +65,7 @@ namespace Nexon
 
         public override bool CanWrite
         {
-            get { return this.encode; }
+            get { return false; }
         }
 
         public override long Length
@@ -130,7 +110,7 @@ namespace Nexon
         {
             try
             {
-                if (disposing && !this.leaveOpen)
+                if (disposing)
                 {
                     this.baseStream.Close();
                 }
@@ -144,21 +124,12 @@ namespace Nexon
 
         public override void Flush()
         {
-            if (this.baseStream == null)
-                throw new ObjectDisposedException(null, "The stream has been disposed.");
-
-            if (this.encode)
-            {
-                this.baseStream.Flush();
-            }
         }
 
         public override int Read(byte[] buffer, int offset, int count)
         {
             if (this.baseStream == null)
                 throw new ObjectDisposedException(null, "The stream has been disposed.");
-            if (this.encode)
-                throw new NotSupportedException("Cannot read from stream.");
 
             long tempOffset = this.Position;
             int length = this.baseStream.Read(buffer, offset, count);
@@ -178,36 +149,12 @@ namespace Nexon
 
         public override void SetLength(long value)
         {
-            if (value < 0)
-                throw new ArgumentOutOfRangeException("value");
-            if (this.baseStream == null)
-                throw new ObjectDisposedException(null, "The stream has been disposed.");
-            if (!this.encode)
-                throw new NotSupportedException("Cannot write to stream.");
-
-            this.baseStream.SetLength(value);
+            throw new NotSupportedException("Cannot write to stream.");
         }
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-            if (offset < 0)
-                throw new ArgumentOutOfRangeException("offset");
-            if (count < 0 || (offset + count) > buffer.Length)
-                throw new ArgumentOutOfRangeException("count");
-            if (this.baseStream == null)
-                throw new ObjectDisposedException(null, "The stream has been disposed.");
-            if (!this.encode)
-                throw new NotSupportedException("Cannot write to stream.");
-
-            // Note: this implementation will modify the buffer!
-
-            long tempOffset = this.Position;
-            for (int i = 0; i < count; ++i)
-                buffer[offset + i] ^= this.key[(tempOffset + i) & 15];
-
-            this.baseStream.Write(buffer, offset, count);
+            throw new NotSupportedException("Cannot write to stream.");
         }
 
         #endregion

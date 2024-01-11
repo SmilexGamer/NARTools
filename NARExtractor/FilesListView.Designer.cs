@@ -32,6 +32,7 @@
             this.colName = new System.Windows.Forms.ColumnHeader();
             this.colLastModified = new System.Windows.Forms.ColumnHeader();
             this.colSize = new System.Windows.Forms.ColumnHeader();
+            this.colStoredType = new System.Windows.Forms.ColumnHeader();
             this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.extractToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.verifyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -41,17 +42,22 @@
             // colName
             // 
             this.colName.Text = "Name";
-            this.colName.Width = 150;
+            this.colName.Width = 300;
             // 
             // colLastModified
             // 
             this.colLastModified.Text = "Last Modified";
-            this.colLastModified.Width = 150;
+            this.colLastModified.Width = 120;
             // 
             // colSize
             // 
             this.colSize.Text = "Size";
             this.colSize.Width = 80;
+            // 
+            // colStoredType
+            // 
+            this.colStoredType.Text = "Stored Type";
+            this.colStoredType.Width = 80;
             // 
             // contextMenuStrip
             // 
@@ -81,7 +87,8 @@
             this.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colName,
             this.colLastModified,
-            this.colSize});
+            this.colSize,
+            this.colStoredType});
             this.ContextMenuStrip = this.contextMenuStrip;
             this.FullRowSelect = true;
             this.HideSelection = false;
@@ -97,6 +104,7 @@
         private System.Windows.Forms.ColumnHeader colName;
         private System.Windows.Forms.ColumnHeader colLastModified;
         private System.Windows.Forms.ColumnHeader colSize;
+        private System.Windows.Forms.ColumnHeader colStoredType;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem extractToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem verifyToolStripMenuItem;

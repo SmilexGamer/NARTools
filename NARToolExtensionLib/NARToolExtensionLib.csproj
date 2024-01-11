@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>Nexon.Extension</RootNamespace>
+    <ApplicationVersion>2.2.0.0</ApplicationVersion>
+    <BaseOutputPath>..\bin</BaseOutputPath>
+    <Title>Nexon Archive Tools Extension Library</Title>
+    <Product>NARTools</Product>
+    <Copyright>Copyright © Smilex_Gamer 2024</Copyright>
+    <Version>2.2.0.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SharpZipLib" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NARToolLib\NARToolLib.csproj" />
+  </ItemGroup>
+
+</Project>
