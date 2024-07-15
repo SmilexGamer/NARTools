@@ -94,7 +94,7 @@ namespace Nexon.Extension
             long offset = TempFile.Length;
             long fileSize = inStream.Length;
             long storeSize = 0;
-            var checksum = new ICSharpCode.SharpZipLib.Checksum.Crc32();
+            var checksum = new ICSharpCode.SharpZipLib.Checksums.Crc32();
             var buffer = new byte[readChunkSize];
 
             switch (storeType)
@@ -128,7 +128,7 @@ namespace Nexon.Extension
                 int count;
                 while ((count = inStream.Read(buffer, 0, readChunkSize)) > 0 )
                 {
-                    checksum.Update(new ArraySegment<byte>(buffer, 0, count));
+                    checksum.Update(buffer, 0, count);
                     storeSize += Write(buffer, 0, count);
                 }
 
@@ -158,7 +158,7 @@ namespace Nexon.Extension
             byte[] compressed = PackFileEntries();
             using (MemoryStream memoryStream = new MemoryStream())
             {
-                ICSharpCode.SharpZipLib.BZip2.BZip2.Compress((Stream)new MemoryStream(compressed, false), (Stream)memoryStream, true, 1);
+                ICSharpCode.SharpZipLib.BZip2.BZip2.Compress((Stream)new MemoryStream(compressed, false), (Stream)memoryStream, 1);
                 compressed = memoryStream.ToArray();
             }
 

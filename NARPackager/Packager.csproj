@@ -10,6 +10,7 @@
     <Version>2.2.0.0</Version>
     <Description>A tool for creating Nexon archive files.</Description>
     <Title>Nexon Archive Packager</Title>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

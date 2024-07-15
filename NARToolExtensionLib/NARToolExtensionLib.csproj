@@ -9,10 +9,13 @@
     <Product>NARTools</Product>
     <Copyright>Copyright © Smilex_Gamer 2024</Copyright>
     <Version>2.2.0.0</Version>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpZipLib" Version="1.2.0" />
+    <Reference Include="ICSharpCode.SharpZipLib">
+      <HintPath>..\ICSharpCode.SharpZipLib.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

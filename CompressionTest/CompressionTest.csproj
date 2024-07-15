@@ -45,9 +45,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\NARToolLib\NARToolLib.csproj">
       <Project>{ECB81F73-0FA2-4658-A43F-8C6D11111F47}</Project>
       <Name>NARToolLib</Name>
