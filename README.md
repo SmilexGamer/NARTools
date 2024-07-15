@@ -10,6 +10,7 @@ An extractor and packager for Nexon Archive files and a model decryptor and encr
 
 ## Credits
 - Da_FileServer, for the original NARTools 2.1 (Source: https://cs.rin.ru/forum/viewtopic.php?p=666514#p666514)
+- omamfan @ discord, for fixing the compression algorithm
 
 ## License
 Licensed under the GPL-3.0 license, see `LICENSE` for more information.
