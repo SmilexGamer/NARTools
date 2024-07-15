@@ -64,6 +64,10 @@ namespace Nexon.Extractor
                     }
                 }
 
+                File.SetCreationTime(path, file.LastModifiedTime);
+                File.SetLastWriteTime(path, file.LastModifiedTime);
+                File.SetLastAccessTime(path, file.LastModifiedTime);
+
                 return true;
             }
         }

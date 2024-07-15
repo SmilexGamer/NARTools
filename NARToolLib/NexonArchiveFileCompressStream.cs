@@ -176,6 +176,7 @@ namespace Nexon
                     {
                         this.ProcessChainBuffer();
                     }
+                    this.FlushRawBuffer();
                 }
             }
             finally

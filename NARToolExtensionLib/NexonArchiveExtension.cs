@@ -298,7 +298,7 @@ namespace Nexon.Extension
         public static byte[] GetFooter( int compressedEntriesSize )
         {
             List<byte> result = new List<byte>();
-            result.AddRange(BitConverter.GetBytes(compressedEntriesSize ^ 1081496863)); // offset EoF-8; compressed file entries size.
+            result.AddRange(BitConverter.GetBytes(compressedEntriesSize ^ 0x4076551F)); // offset EoF-8; compressed file entries size.
             result.AddRange(BitConverter.GetBytes( SIGNATURE ));    // offset EoF-4; "NAR" format footer signature
             return result.ToArray();
         }
