@@ -27,13 +27,18 @@ namespace Nexon
         /// </summary>
         private const int DictionaryMaxSize = 8192;
 
+        /// <summary>
+        /// The maximum number of bytes that a hash table can hold.
+        /// </summary>
+        private const int HashTableMaxSize = 8192;
+
         private bool leaveOpen;
         private Stream baseStream;
         private long outputLength;
 
         // This could also be called the "window"... but dictionary is probably
         // more accurate.
-        CircularBuffer dictionary = new CircularBuffer(DictionaryMaxSize);
+        CircularBuffer dictionary = new CircularBuffer(DictionaryMaxSize, HashTableMaxSize);
         int lastReadDistance;
         int lastReadLength;
 

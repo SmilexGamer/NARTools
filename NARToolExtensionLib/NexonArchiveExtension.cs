@@ -82,7 +82,7 @@ namespace Nexon.Extension
         /// <param name="lastModifiedTime">The last file modified/write time.</param>
         /// <param name="readChunkSize">The buffer read chunk size.</param>
         /// <returns></returns>
-        public NexonArchiveExtensionFileEntry Add(Stream inStream, string path, NexonArchiveFileEntryType storeType, DateTime lastModifiedTime, int readChunkSize = 8192)
+        public NexonArchiveExtensionFileEntry Add(Stream inStream, string path, NexonArchiveFileEntryType storeType, DateTime lastModifiedTime, NexonArchiveFileCompressionLevel compressionLevel, int readChunkSize = 8192)
         {
             if (inStream == null)
                 throw new ArgumentNullException(nameof(inStream));
@@ -108,7 +108,7 @@ namespace Nexon.Extension
                     int readLength;
                     using (var tempStreamIn = new FileStream(PATH_TEMP_COMPRESSION, FileMode.Create))
                     {
-                        using (NexonArchiveFileCompressStream compressorStream = new NexonArchiveFileCompressStream(tempStreamIn))
+                        using (NexonArchiveFileCompressStream compressorStream = new NexonArchiveFileCompressStream(tempStreamIn, compressionLevel))
                         {
                             while ((readLength = inStream.Read(buffer, 0, readChunkSize)) > 0)
                             {

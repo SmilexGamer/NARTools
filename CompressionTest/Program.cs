@@ -45,7 +45,7 @@ namespace Nexon.CompressionTest
 
                 using (FileStream compressedStream = new FileStream("compressed.bin", FileMode.Create, FileAccess.ReadWrite, FileShare.Read))
                 {
-                    using (NexonArchiveFileCompressStream compressorStream = new NexonArchiveFileCompressStream(compressedStream, true))
+                    using (NexonArchiveFileCompressStream compressorStream = new NexonArchiveFileCompressStream(compressedStream, NexonArchiveFileCompressionLevel.Slowest, true))
                     {
                         while ((readLength = fileStream.Read(buffer, 0, 8192)) > 0)
                         {

@@ -50,6 +50,7 @@
     <Compile Include="Ice.cs" />
     <Compile Include="ModelHelper.cs" />
     <Compile Include="NexonArchive.cs" />
+    <Compile Include="NexonArchiveFileCompressionLevel.cs" />
     <Compile Include="NexonArchiveFileCompressStream.cs" />
     <Compile Include="NexonArchiveFileEncoderStream.cs" />
     <Compile Include="NexonArchiveFileEntry.cs" />

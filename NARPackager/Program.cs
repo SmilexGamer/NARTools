@@ -10,23 +10,30 @@ namespace Nexon.Packager
         private static string parentPath;
         private static Nexon.NexonArchiveFileEntryType storeType;
         private static Nexon.Extension.NexonArchiveExtension archive;
+        private static Nexon.NexonArchiveFileCompressionLevel compressionLevel;
 
 
         static void Main(string[] args)
         {
             if (args.Length <= 0)
             {
-                Console.WriteLine("Usage: Packager.exe <Folder Name> <Store Type: 0 - Raw, 1 - Encoded, 2 - Encoded and Compressed. Default: Encoded)");
+                Console.WriteLine("Usage: Packager.exe <Folder Name> <Store Type: 0 - Raw, 1 - Encoded, 2 - Encoded and Compressed. Default: Encoded) <Compression Level: 0 - Fastest, 1 - Fast, 2 - Normal, 3 - Slow, 4 - Slowest>");
                 Console.In.ReadLine();
                 return;
             }
 
             basePath = args[0];
             storeType = Nexon.NexonArchiveFileEntryType.Encoded;
+            compressionLevel = Nexon.NexonArchiveFileCompressionLevel.Normal;
 
             if (args.Length >= 2)
             {
                 storeType = (Nexon.NexonArchiveFileEntryType)Int32.Parse(args[1]);
+            }
+
+            if (args.Length >= 3)
+            {
+                compressionLevel = (Nexon.NexonArchiveFileCompressionLevel)Int32.Parse(args[2]);
             }
 
             if (!Directory.Exists(basePath))
@@ -78,9 +85,13 @@ namespace Nexon.Packager
             var fileInfo = new FileInfo(path);
             using (FileStream inStream = fileInfo.OpenRead())
             {
-                var entry = archive.Add(inStream, path.Replace(parentPath, "").Replace('\\', '/'), storeType, fileInfo.LastWriteTime);
+                var entry = archive.Add(inStream, path.Replace(parentPath, "").Replace('\\', '/'), storeType, fileInfo.LastWriteTime, compressionLevel);
                 Console.WriteLine("Path: {0}", entry.Path);
                 Console.WriteLine("Type: {0}", entry.StoreType);
+                if (storeType == NexonArchiveFileEntryType.EncodedAndCompressed)
+                {
+                    Console.WriteLine("Compression Level: {0}", compressionLevel);  
+                }
             }
 
             Console.WriteLine("--------------------------------------------");

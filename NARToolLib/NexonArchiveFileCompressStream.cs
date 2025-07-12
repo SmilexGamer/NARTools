@@ -28,37 +28,30 @@ namespace Nexon
         /// </summary>
         private const int RawBufferMaxSize = 32;
 
-        /// <summary>
-        /// The maximum number of bytes that a dictionary lookup can go.
-        /// </summary>
-        private const int DictionaryMaxSize = 8192;
-
-        /// <summary>
-        /// The maximum number of bytes in a dictionary lookup.
-        /// </summary>
-        private const int ChainBufferMaxSize = 264;
-
         private bool leaveOpen;
         private Stream baseStream;
 
         private byte[] rawBuffer = new byte[RawBufferMaxSize];
         private int rawBufferLength;
 
-        private CircularBuffer dictionary = new CircularBuffer(DictionaryMaxSize);
+        private CircularBuffer dictionary;
 
-        private byte[] chainBuffer = new byte[ChainBufferMaxSize];
+        private byte[] chainBuffer;
         private int chainBufferLength;
+
+        private int dictionarySize;
+        private int chainBufferSize;
 
         #endregion
 
         #region Constructors
 
-        public NexonArchiveFileCompressStream(Stream stream)
-            : this(stream, false)
+        public NexonArchiveFileCompressStream(Stream stream, NexonArchiveFileCompressionLevel compressionLevel)
+            : this(stream, compressionLevel, false)
         {
         }
 
-        public NexonArchiveFileCompressStream(Stream stream, bool leaveOpen)
+        public NexonArchiveFileCompressStream(Stream stream, NexonArchiveFileCompressionLevel compressionLevel, bool leaveOpen)
         {
             if (stream == null)
                 throw new ArgumentNullException("stream");
@@ -67,6 +60,10 @@ namespace Nexon
 
             this.baseStream = stream;
             this.leaveOpen = leaveOpen;
+            this.dictionarySize = GetDictionarySize(compressionLevel);
+            this.chainBufferSize = GetChainBufferSize(compressionLevel);
+            this.dictionary = new CircularBuffer(this.dictionarySize, GetHashTableSize(compressionLevel));
+            this.chainBuffer = new byte[this.chainBufferSize];
         }
 
         #endregion
@@ -146,10 +143,10 @@ namespace Nexon
             while (count > 0)
             {
                 System.Diagnostics.Debug.Assert(this.chainBufferLength >= 0);
-                System.Diagnostics.Debug.Assert(this.chainBufferLength <= ChainBufferMaxSize);
+                System.Diagnostics.Debug.Assert(this.chainBufferLength <= this.chainBufferSize);
 
                 // When the chain buffer is full, process a single operation.
-                int chainBufferRemaining = ChainBufferMaxSize - this.chainBufferLength;
+                int chainBufferRemaining = this.chainBufferSize - this.chainBufferLength;
                 if (chainBufferRemaining == 0)
                 {
                     this.ProcessChainBuffer();
@@ -234,7 +231,7 @@ namespace Nexon
             if (matchLength >= 3)
             {
                 System.Diagnostics.Debug.Assert(matchDistance > 0);
-                System.Diagnostics.Debug.Assert(matchLength <= ChainBufferMaxSize);
+                System.Diagnostics.Debug.Assert(matchLength <= this.chainBufferSize);
 
                 // Flush any raw bytes currently buffered.
                 this.FlushRawBuffer();
@@ -268,7 +265,7 @@ namespace Nexon
                 }
 
                 // Write the operation byte.
-                System.Diagnostics.Debug.Assert(matchDistance < DictionaryMaxSize);
+                System.Diagnostics.Debug.Assert(matchDistance < this.dictionarySize);
                 System.Diagnostics.Debug.Assert(matchLength < 8);
                 this.baseStream.WriteByte((byte)((matchLength << 5) | (matchDistance >> 8)));
 
@@ -288,6 +285,63 @@ namespace Nexon
                 this.dictionary.Append(raw);
                 --this.chainBufferLength;
                 Buffer.BlockCopy(this.chainBuffer, 1, this.chainBuffer, 0, this.chainBufferLength);
+            }
+        }
+
+        private int GetDictionarySize(NexonArchiveFileCompressionLevel compressionLevel)
+        {
+            switch (compressionLevel)
+            {
+                case NexonArchiveFileCompressionLevel.Fastest:
+                    return 512;
+                case NexonArchiveFileCompressionLevel.Fast:
+                    return 1024;
+                case NexonArchiveFileCompressionLevel.Normal:
+                    return 2048;
+                case NexonArchiveFileCompressionLevel.Slow:
+                    return 4096;
+                case NexonArchiveFileCompressionLevel.Slowest:
+                    return 8192;
+                default:
+                    throw new NotSupportedException("Unsupported file compression level: " + (object)compressionLevel + ".");
+            }
+        }
+
+        private int GetHashTableSize(NexonArchiveFileCompressionLevel compressionLevel)
+        {
+            switch (compressionLevel)
+            {
+                case NexonArchiveFileCompressionLevel.Fastest:
+                    return 512;
+                case NexonArchiveFileCompressionLevel.Fast:
+                    return 1024;
+                case NexonArchiveFileCompressionLevel.Normal:
+                    return 2048;
+                case NexonArchiveFileCompressionLevel.Slow:
+                    return 4096;
+                case NexonArchiveFileCompressionLevel.Slowest:
+                    return 8192;
+                default:
+                    throw new NotSupportedException("Unsupported file compression level: " + (object)compressionLevel + ".");
+            }
+        }
+
+        private int GetChainBufferSize(NexonArchiveFileCompressionLevel compressionLevel)
+        {
+            switch (compressionLevel)
+            {
+                case NexonArchiveFileCompressionLevel.Fastest:
+                    return 16;
+                case NexonArchiveFileCompressionLevel.Fast:
+                    return 32;
+                case NexonArchiveFileCompressionLevel.Normal:
+                    return 64;
+                case NexonArchiveFileCompressionLevel.Slow:
+                    return 128;
+                case NexonArchiveFileCompressionLevel.Slowest:
+                    return 264;
+                default:
+                    throw new NotSupportedException("Unsupported file compression level: " + (object)compressionLevel + ".");
             }
         }
 
