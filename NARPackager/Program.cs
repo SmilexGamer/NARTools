@@ -44,6 +44,8 @@ namespace Nexon.Packager
             }
             parentPath = Directory.GetParent(basePath).FullName;
 
+            DateTime startTime = DateTime.Now;
+
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
             using (archive = new Nexon.Extension.NexonArchiveExtension((new DirectoryInfo(basePath)).Name + ".nar"))
             {
@@ -53,7 +55,9 @@ namespace Nexon.Packager
                 archive.Save();
             }
 
-            Console.WriteLine("Done!");
+            DateTime endTime = DateTime.Now;
+
+            Console.WriteLine("Done! Packaging time: " + (endTime - startTime));
             Console.In.ReadLine();
         }
 

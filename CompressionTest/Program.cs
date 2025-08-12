@@ -45,6 +45,8 @@ namespace Nexon.CompressionTest
 
                 using (FileStream compressedStream = new FileStream("compressed.bin", FileMode.Create, FileAccess.ReadWrite, FileShare.Read))
                 {
+                    DateTime startTime = DateTime.Now;
+
                     using (NexonArchiveFileCompressStream compressorStream = new NexonArchiveFileCompressStream(compressedStream, NexonArchiveFileCompressionLevel.Slowest, true))
                     {
                         while ((readLength = fileStream.Read(buffer, 0, 8192)) > 0)
@@ -53,10 +55,14 @@ namespace Nexon.CompressionTest
                         }
                     }
 
-                    Console.WriteLine("Finished compressing file.");
+                    DateTime endTime = DateTime.Now;
+
+                    Console.WriteLine("Finished compressing file. Compression time: " + (endTime - startTime));
 
                     using (FileStream tempFileStream = new FileStream("decompressed.bin", FileMode.Create, FileAccess.ReadWrite, FileShare.Read))
                     {
+                        startTime = DateTime.Now;
+
                         compressedStream.Position = 0;
                         using (NexonArchiveFileDecompressStream decompressorStream = new NexonArchiveFileDecompressStream(compressedStream, readLength, true))
                         {
@@ -67,7 +73,9 @@ namespace Nexon.CompressionTest
                             }
                         }
 
-                        Console.WriteLine("Finished decompressing file.");
+                        endTime = DateTime.Now;
+
+                        Console.WriteLine("Finished decompressing file. Decompression time: " + (endTime - startTime));
 
                         if (tempFileStream.Length != fileStream.Length)
                         {

@@ -14,7 +14,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using System.Collections.Generic;
 
 namespace Nexon
 {
@@ -27,8 +26,13 @@ namespace Nexon
         private int length;
         private int hashTableSize;
 
-        // Hash table for fast match finding - significantly improves performance
-        private Dictionary<int, LinkedList<int>> hashTable;
+        // Array-based hash chains: no per-node allocations.
+        // For each hash bucket we keep head (oldest) and tail (newest).
+        private int[] head;
+        private int[] tail;
+        private int[] next; // next newer
+        private int[] prev; // previous older
+        private int[] bucketCount;
 
         #endregion
 
@@ -37,9 +41,28 @@ namespace Nexon
         public CircularBuffer(int length, int hashTableSize)
         {
             System.Diagnostics.Debug.Assert(length > 0);
+            System.Diagnostics.Debug.Assert(hashTableSize > 0);
+
             this.data = new byte[length];
             this.hashTableSize = hashTableSize;
-            this.hashTable = new Dictionary<int, LinkedList<int>>(hashTableSize);
+
+            this.head = new int[hashTableSize];
+            this.tail = new int[hashTableSize];
+            this.next = new int[length];
+            this.prev = new int[length];
+            this.bucketCount = new int[hashTableSize];
+
+            for (int i = 0; i < hashTableSize; i++)
+            {
+                this.head[i] = -1;
+                this.tail[i] = -1;
+                this.bucketCount[i] = 0;
+            }
+            for (int i = 0; i < length; i++)
+            {
+                this.next[i] = -1;
+                this.prev[i] = -1;
+            }
         }
 
         #endregion
@@ -73,88 +96,59 @@ namespace Nexon
             if (count == 0)
                 return;
 
-            // Optimized version of the original bulk copy logic
+            // If we are going to overwrite the whole ring, copy last N bytes and rebuild.
             if (count >= this.data.Length)
             {
-                // Clear hash table since we're overwriting everything
-                this.hashTable.Clear();
+                // Clear bucket metadata and copy last N bytes
+                for (int i = 0; i < this.hashTableSize; i++)
+                {
+                    this.head[i] = -1;
+                    this.tail[i] = -1;
+                    this.bucketCount[i] = 0;
+                }
+                for (int i = 0; i < this.data.Length; i++)
+                {
+                    this.next[i] = -1;
+                    this.prev[i] = -1;
+                }
 
                 Buffer.BlockCopy(buffer, offset + (count - this.data.Length), this.data, 0, this.data.Length);
                 this.source = 0;
                 this.length = this.data.Length;
 
-                // Rebuild hash table for new data
+                // Rebuild hash chains for new data
                 this.RebuildHashTable();
+                return;
             }
-            else
+
+            // Normal incremental append: keep original semantics by appending one-by-one.
+            for (int i = 0; i < count; i++)
             {
-                // Use original logic but update hash table incrementally
-                if (this.source == this.data.Length)
-                    this.source = 0;
-                int initialCopyLength = Math.Min(this.data.Length - this.source, count);
-
-                // Update hash table for bytes being overwritten
-                for (int i = 0; i < initialCopyLength; i++)
-                {
-                    int pos = this.source + i;
-                    if (this.length == this.data.Length)
-                    {
-                        this.RemoveFromHashTable(pos);
-                    }
-                }
-
-                Buffer.BlockCopy(buffer, offset, this.data, this.source, initialCopyLength);
-
-                // Add new bytes to hash table
-                for (int i = 0; i < initialCopyLength; i++)
-                {
-                    this.AddToHashTable(this.source + i, this.data[this.source + i]);
-                }
-
-                if (count > initialCopyLength)
-                {
-                    // Update hash table for second part
-                    for (int i = 0; i < count - initialCopyLength; i++)
-                    {
-                        if (this.length == this.data.Length)
-                        {
-                            this.RemoveFromHashTable(i);
-                        }
-                    }
-
-                    Buffer.BlockCopy(buffer, offset + initialCopyLength, this.data, 0, count - initialCopyLength);
-
-                    // Add new bytes to hash table
-                    for (int i = 0; i < count - initialCopyLength; i++)
-                    {
-                        this.AddToHashTable(i, this.data[i]);
-                    }
-                }
-
-                this.source = (this.source + count) % this.data.Length;
-                this.length = Math.Min(this.length + count, this.data.Length);
+                Append(buffer[offset + i]);
             }
         }
 
         public void Append(byte value)
         {
-            // Remove old hash entry if we're overwriting
+            // If buffer is full we will overwrite position 'source' -> remove that position from its bucket
             if (this.length == this.data.Length)
             {
+                // Remove the existing entry for 'source' (oldest physical slot that will be overwritten)
                 this.RemoveFromHashTable(this.source);
             }
 
-            this.data[this.source++] = value;
-            if (this.source == this.data.Length)
+            // Write the byte at the current source.
+            this.data[this.source] = value;
+
+            // Insert this position into its bucket as newest (append to tail), preserving original ordering.
+            int hash = this.HashFunction(value);
+            InsertPositionToBucketTail(hash, this.source);
+
+            // Advance source and update logical length.
+            if (++this.source == this.data.Length)
                 this.source = 0;
             if (this.length < this.data.Length)
                 ++this.length;
-
-            // Add to hash table (use the previous source position)
-            int hashPos = this.source - 1;
-            if (hashPos < 0)
-                hashPos = this.data.Length - 1;
-            this.AddToHashTable(hashPos, value);
         }
 
         public byte GetByteAndUpdate(int distance)
@@ -162,11 +156,11 @@ namespace Nexon
             if (distance <= 0 || distance > this.length)
                 throw new ArgumentOutOfRangeException("distance");
 
-            distance = this.source - distance;
-            if (distance < 0)
-                distance += this.length;
+            int idx = this.source - distance;
+            if (idx < 0)
+                idx += this.data.Length;
 
-            byte value = this.data[distance];
+            byte value = this.data[idx];
             this.Append(value);
             return value;
         }
@@ -192,14 +186,10 @@ namespace Nexon
 
         public int Match(int distance, byte[] buffer, int offset, int count)
         {
-            if (buffer == null)
-                throw new ArgumentNullException("buffer");
-            if (offset < 0)
-                throw new ArgumentOutOfRangeException("offset");
-            if (count < 0 || (offset + count) > buffer.Length)
-                throw new ArgumentOutOfRangeException("count");
-            if (distance <= 0 || distance > this.length)
-                throw new ArgumentOutOfRangeException("distance");
+            if (buffer == null) throw new ArgumentNullException("buffer");
+            if (offset < 0) throw new ArgumentOutOfRangeException("offset");
+            if (count < 0 || (offset + count) > buffer.Length) throw new ArgumentOutOfRangeException("count");
+            if (distance <= 0 || distance > this.length) throw new ArgumentOutOfRangeException("distance");
 
             return this.MatchInternal(distance, buffer, offset, count);
         }
@@ -223,35 +213,33 @@ namespace Nexon
             byte firstByte = buffer[offset];
             int hash = this.HashFunction(firstByte);
 
-            LinkedList<int> candidates;
-            if (!this.hashTable.TryGetValue(hash, out candidates) || candidates.Count == 0)
-                return 0;
-
             int longestMatchDistance = 0;
             int longestMatchLength = 0;
 
-            // Check candidates from hash table (most recent first for better cache locality)
-            for (var node = candidates.Last; node != null; node = node.Previous)
+            // Traverse candidates from newest to oldest (original iterated candidates.Last to First).
+            int pos = this.tail[hash]; // newest
+            while (pos != -1)
             {
-                int pos = node.Value;
                 int candidateDistance = this.source - pos;
                 if (candidateDistance <= 0)
                     candidateDistance += this.length;
 
-                // Quick check: if this position is too far to beat our current best, skip
-                if (candidateDistance > this.length)
-                    continue;
-
-                int matchLength = this.MatchInternal(candidateDistance, buffer, offset, count);
-                if (matchLength > longestMatchLength)
+                // Quick check: if this position is too far to be valid, skip
+                if (candidateDistance <= this.length && candidateDistance > 0)
                 {
-                    longestMatchDistance = candidateDistance;
-                    longestMatchLength = matchLength;
+                    int matchLength = this.MatchInternal(candidateDistance, buffer, offset, count);
+                    if (matchLength > longestMatchLength)
+                    {
+                        longestMatchDistance = candidateDistance;
+                        longestMatchLength = matchLength;
 
-                    // Early termination if we found a very good match
-                    if (matchLength == count)
-                        break;
+                        // Early termination if we found a perfect match
+                        if (matchLength == count)
+                            break;
+                    }
                 }
+
+                pos = this.prev[pos]; // move to older
             }
 
             distance = longestMatchDistance;
@@ -296,40 +284,42 @@ namespace Nexon
 
         private void AddToHashTable(int position, byte value)
         {
-            int hash = this.HashFunction(value);
-            LinkedList<int> positions;
+            // This method mirrors original behavior but uses array chains.
+            int h = this.HashFunction(value);
+            InsertPositionToBucketTail(h, position);
 
-            if (!this.hashTable.TryGetValue(hash, out positions))
+            // If bucket grows beyond hashTableSize, remove the oldest (head) to match original behavior.
+            if (++this.bucketCount[h] > this.hashTableSize)
             {
-                positions = new LinkedList<int>();
-                this.hashTable[hash] = positions;
-            }
-
-            positions.AddLast(position);
-
-            // Limit hash chain length to prevent performance degradation
-            if (positions.Count > this.hashTableSize)
-            {
-                positions.RemoveFirst();
+                int oldest = this.head[h];
+                if (oldest != -1)
+                {
+                    RemovePositionFromBucket(h, oldest);
+                    --this.bucketCount[h];
+                }
             }
         }
 
         private void RemoveFromHashTable(int position)
         {
+            // Mirror original early-exit check: ignore positions outside the logical 'length'
             if (position >= this.length)
                 return;
 
             byte value = this.data[position];
-            int hash = this.HashFunction(value);
-            LinkedList<int> positions;
+            int h = this.HashFunction(value);
 
-            if (this.hashTable.TryGetValue(hash, out positions))
+            // Remove position from its bucket if present
+            int cur = this.head[h];
+            while (cur != -1)
             {
-                positions.Remove(position);
-                if (positions.Count == 0)
+                if (cur == position)
                 {
-                    this.hashTable.Remove(hash);
+                    RemovePositionFromBucket(h, position);
+                    --this.bucketCount[h];
+                    break;
                 }
+                cur = this.next[cur];
             }
         }
 
@@ -341,12 +331,74 @@ namespace Nexon
 
         private void RebuildHashTable()
         {
-            this.hashTable.Clear();
+            // Clear buckets
+            for (int i = 0; i < this.hashTableSize; i++)
+            {
+                this.head[i] = -1;
+                this.tail[i] = -1;
+                this.bucketCount[i] = 0;
+            }
+            for (int i = 0; i < this.next.Length; i++)
+            {
+                this.next[i] = -1;
+                this.prev[i] = -1;
+            }
 
+            // Insert in chronological order (oldest -> newest) so tail becomes newest
             for (int i = 0; i < this.length; i++)
             {
-                this.AddToHashTable(i, this.data[i]);
+                int pos = this.source - this.length + i;
+                if (pos < 0) pos += this.data.Length;
+                AddToHashTable(pos, this.data[pos]);
             }
+        }
+
+        #endregion
+
+        #region Bucket helper methods
+
+        // Insert position as newest (append to tail) in bucket h.
+        private void InsertPositionToBucketTail(int h, int position)
+        {
+            // unlink indices should be clean
+            this.next[position] = -1;
+            this.prev[position] = -1;
+
+            if (this.tail[h] == -1)
+            {
+                // empty bucket
+                this.head[h] = position;
+                this.tail[h] = position;
+            }
+            else
+            {
+                // append to tail
+                int oldTail = this.tail[h];
+                this.next[oldTail] = position;
+                this.prev[position] = oldTail;
+                this.tail[h] = position;
+            }
+            this.bucketCount[h]++;
+        }
+
+        // Remove a specific position from bucket h (internal, assumes position exists)
+        private void RemovePositionFromBucket(int h, int position)
+        {
+            int p = this.prev[position];
+            int n = this.next[position];
+
+            if (p != -1)
+                this.next[p] = n;
+            else
+                this.head[h] = n; // position was head (oldest)
+
+            if (n != -1)
+                this.prev[n] = p;
+            else
+                this.tail[h] = p; // position was tail (newest)
+
+            this.prev[position] = -1;
+            this.next[position] = -1;
         }
 
         #endregion

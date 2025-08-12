@@ -387,11 +387,13 @@ namespace Nexon.Extractor
                 {
                     taskDialog.Text = "Extracting files...";
                     taskDialog.DestinationPath = extractHelper.ExtractPath;
+                    DateTime startTime = DateTime.Now;
                     DialogResult result = taskDialog.ShowDialog(this);
+                    DateTime endTime = DateTime.Now;
                     if (result == DialogResult.Abort)
                         MessageBox.Show("An error occured while extracting the files.", "Error");
                     else if (result == DialogResult.OK)
-                        MessageBox.Show("All the selected files have been extracted successfully.", "Extraction Complete");
+                        MessageBox.Show("All the selected files have been extracted successfully.\nExtraction time: " + (endTime - startTime), "Extraction Complete");
                 }
             }
         }
