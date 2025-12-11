@@ -141,14 +141,14 @@ namespace Nexon
 
             // Get the header version.
             int version = BitConverter.ToInt32(header, 0);
-            if (version == 1)
+            if (version == 1 || version == 2)
             {
                 if (header.Length < 16)
                     throw new InvalidDataException("NAR header is invalid.");
 
-                int type = BitConverter.ToInt32(header, 4); // not sure
+                int unk = BitConverter.ToInt32(header, 4); // always 0
                 int directorySize = BitConverter.ToInt32(header, 8);
-                int isReadable = BitConverter.ToInt32(header, 12); // not sure
+                int unk2 = BitConverter.ToInt32(header, 12); // always 1
 
                 System.Diagnostics.Debug.Assert(directorySize >= 0);
 
@@ -164,6 +164,30 @@ namespace Nexon
                     System.Diagnostics.Debug.Assert(entryOffset <= header.Length);
                     this.fileEntries.Add(fileEntry);
                 }
+
+                if (version == 2)
+                {
+                    System.Diagnostics.Debug.Assert((entryOffset + 24) <= header.Length);
+                    int unk3 = BitConverter.ToInt32(header, entryOffset); // always 1
+                    int size = BitConverter.ToInt32(header, entryOffset + 4); // size for more data
+                    System.Diagnostics.Debug.Assert((entryOffset + size + 12) == header.Length);
+                    int unk4 = BitConverter.ToInt32(header, entryOffset + 8); // always 0
+                    uint oldchecksum = BitConverter.ToUInt32(header, entryOffset + 12); // old checksum (from NAP file)
+                    uint newchecksum = BitConverter.ToUInt32(header, entryOffset + 16); // new checksum (from NAR file after patch)
+                    int moreData = BitConverter.ToInt32(header, entryOffset + 20); // more data
+                    entryOffset += 24;
+
+                    if (moreData == 1)
+                    {
+                        System.Diagnostics.Debug.Assert((entryOffset + size - 12) <= header.Length);
+                        List<byte> unk5 = new List<byte>();
+                        for (int i = 0; i < size - 12; i++)
+                            unk5.Add(header[entryOffset + i]);
+
+                        entryOffset += size - 12;
+                    }
+                }
+
                 System.Diagnostics.Debug.Assert(entryOffset == header.Length);
             }
             else

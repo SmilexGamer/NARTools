@@ -22,7 +22,7 @@ namespace Nexon.Extension
         /// <summary>
         /// The temporary file path for compression processing.
         /// </summary>
-        public static readonly string PATH_TEMP_COMPRESSION = Path.GetTempPath() + "/_repack_compressed.tmp";
+        public static readonly string PATH_TEMP_COMPRESSION = Path.GetTempPath() + "/" + Path.GetRandomFileName() + "_repack_compressed.tmp";
 
         /// <summary>
         /// File entry xor sequences.
@@ -181,11 +181,11 @@ namespace Nexon.Extension
         private byte[] PackFileEntries()
         {
             List<byte> result = new List<byte>();
-            result.AddRange(NexonArchiveExtensionFileEntry.GetHeader(fileEntries.Count));
             foreach (NexonArchiveExtensionFileEntry entry in fileEntries)
             {
                 result.AddRange(entry.ToBytes());
             }
+            result.InsertRange(0, NexonArchiveExtensionFileEntry.GetHeader(fileEntries.Count, result.Count + 4));
             return result.ToArray();
         }
 

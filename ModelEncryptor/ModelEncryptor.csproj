@@ -3,13 +3,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-    <ApplicationVersion>2.4.0.0</ApplicationVersion>
+    <ApplicationVersion>2.5.0.0</ApplicationVersion>
     <BaseOutputPath>..\bin</BaseOutputPath>
     <Title>Model Encryptor</Title>
     <Description>A tool for encrypting model files with Nexon's encryption algorithm in Counter-Strike Online.</Description>
     <Product>NARTools</Product>
     <Copyright>Copyright © Smilex_Gamer 2025</Copyright>
-    <Version>2.4.0.0</Version>
+    <Version>2.5.0.0</Version>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 

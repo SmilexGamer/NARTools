@@ -362,7 +362,7 @@
             // narOpenFileDialog
             // 
             this.narOpenFileDialog.DefaultExt = "nar";
-            this.narOpenFileDialog.Filter = "NAR files|*.nar|All files|*.*";
+            this.narOpenFileDialog.Filter = "NAR files|*.nar|NAP files|*.nap|All files|*.*";
             // 
             // extractFolderBrowserDialog
             // 

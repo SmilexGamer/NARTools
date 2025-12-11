@@ -95,7 +95,7 @@ namespace Nexon.Extension
         /// </summary>
         /// <param name="counts">The file entry counts.</param>
         /// <returns></returns>
-        public static byte[] GetHeader(int counts)
+        public static byte[] GetHeader(int counts, int directorySize)
         {
             if (counts < 0)
                 throw new InvalidDataException("Directory entry count is too large.");
@@ -103,8 +103,8 @@ namespace Nexon.Extension
             List<byte> result = new List<byte>();
             result.AddRange(BitConverter.GetBytes( VERSION ));  // offset 0; version
             result.AddRange(BitConverter.GetBytes((int) 0));    // offset 4; unknown
-            result.AddRange(BitConverter.GetBytes((int) 4));    // offset 8; unknown
-            result.AddRange(BitConverter.GetBytes((int) 1));    // offset 12; version?
+            result.AddRange(BitConverter.GetBytes(directorySize));    // offset 8; directorySize
+            result.AddRange(BitConverter.GetBytes((int) 1));    // offset 12; unknown
             result.AddRange(BitConverter.GetBytes(counts));     // offset 16; entry counts
             return result.ToArray();
         }
