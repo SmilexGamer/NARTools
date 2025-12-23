@@ -49,7 +49,7 @@ namespace Nexon.Extension
         /// <summary>
         /// Temporary file stream.
         /// </summary>
-        internal FileStream TempFile { get; set; }
+        public FileStream TempFile { get; set; }
 
 
         /// <summary>
@@ -149,13 +149,16 @@ namespace Nexon.Extension
         /// Returns the output file path.
         /// </summary>
         /// <param name="isOverwrite">Destination file will be overwritten if set to true.</param>
-        public string Save( bool isOverwrite = true )
+        /// <param name="isNAP">Writes archive as a NAP file if set to true.</param>
+        /// <param name="prePatchCRC">The checksum of the NAR file before the patch.</param>
+        /// <param name="postPatchCRC">The checksum of the NAR file after the patch.</param>
+        public string Save( bool isOverwrite = true, bool isNAP = false, uint prePatchCRC = 0, uint postPatchCRC = 0 )
         {
             if (TempFile == null)
                 throw new ArgumentNullException(nameof(TempFile));
 
             // Compress them.
-            byte[] compressed = PackFileEntries();
+            byte[] compressed = PackFileEntries(isNAP, prePatchCRC, postPatchCRC);
             using (MemoryStream memoryStream = new MemoryStream())
             {
                 ICSharpCode.SharpZipLib.BZip2.BZip2.Compress((Stream)new MemoryStream(compressed, false), (Stream)memoryStream, 1);
@@ -177,15 +180,97 @@ namespace Nexon.Extension
             return OutputFilePath;
         }
 
+        public void RewritePatchCRCs(uint prePatchCRC, uint postPatchCRC)
+        {
+            if (OutputFilePath == null)
+                throw new InvalidOperationException("Archive has not been saved yet.");
 
-        private byte[] PackFileEntries()
+            using (FileStream fs = new FileStream(OutputFilePath, FileMode.Open, FileAccess.ReadWrite))
+            using (BinaryReader reader = new BinaryReader(fs))
+            using (BinaryWriter writer = new BinaryWriter(fs))
+            {
+                fs.Seek(-8, SeekOrigin.End);
+                int oldEncodedHeaderSize = reader.ReadInt32();
+                int oldHeaderSize = oldEncodedHeaderSize ^ 0x4076551F;
+
+                long headerOffset = fs.Length - 8 - oldHeaderSize;
+                fs.Seek(headerOffset, SeekOrigin.Begin);
+
+                byte[] encodedHeader = reader.ReadBytes(oldHeaderSize);
+
+                for (int i = 0; i < encodedHeader.Length; i++)
+                    encodedHeader[i] ^= HeaderXor[i & 15];
+
+                byte[] header;
+                using (var inMs = new MemoryStream(encodedHeader))
+                using (var outMs = new MemoryStream())
+                {
+                    ICSharpCode.SharpZipLib.BZip2.BZip2.Decompress(inMs, outMs);
+                    header = outMs.ToArray();
+                }
+
+                int version = BitConverter.ToInt32(header, 0);
+                if (version != 2)
+                    throw new InvalidOperationException("RewritePatchCRCs only applies to NAP (v2).");
+
+                int directoryCount = BitConverter.ToInt32(header, 16);
+                int entryOffset = 20;
+
+                for (int i = 0; i < directoryCount; i++)
+                {
+                    ushort pathLength = BitConverter.ToUInt16(header, entryOffset);
+                    entryOffset += 2;
+                    entryOffset += pathLength;
+                    entryOffset += 4; // storedType
+                    entryOffset += 4; // offset
+                    entryOffset += 4; // compressedSize
+                    entryOffset += 4; // size
+                    entryOffset += 4; // lastModifiedTime (uint32)
+                    entryOffset += 4; // checksum
+                }
+
+                if (entryOffset + 20 > header.Length)
+                    throw new InvalidDataException("NAP patch block is truncated.");
+
+                Buffer.BlockCopy(BitConverter.GetBytes(prePatchCRC), 0, header, entryOffset + 12, 4);
+                Buffer.BlockCopy(BitConverter.GetBytes(postPatchCRC), 0, header, entryOffset + 16, 4);
+
+                byte[] recompressed;
+                using (var raw = new MemoryStream(header))
+                using (var compressed = new MemoryStream())
+                {
+                    ICSharpCode.SharpZipLib.BZip2.BZip2.Compress(raw, compressed, 1);
+                    recompressed = compressed.ToArray();
+                }
+
+                for (int i = 0; i < recompressed.Length; i++)
+                    recompressed[i] ^= HeaderXor[i & 15];
+
+                fs.SetLength(headerOffset);
+                fs.Seek(headerOffset, SeekOrigin.Begin);
+
+                writer.Write(recompressed);
+                writer.Write(recompressed.Length ^ 0x4076551F);
+                writer.Write(SIGNATURE);
+            }
+        }
+
+
+        /// <param name="isNAP">Writes archive as a NAP file if set to true.</param>
+        /// <param name="prePatchCRC">The checksum of the NAR file before the patch.</param>
+        /// <param name="postPatchCRC">The checksum of the NAR file after the patch.</param>
+        private byte[] PackFileEntries( bool isNAP = false, uint prePatchCRC = 0, uint postPatchCRC = 0 )
         {
             List<byte> result = new List<byte>();
             foreach (NexonArchiveExtensionFileEntry entry in fileEntries)
             {
                 result.AddRange(entry.ToBytes());
             }
-            result.InsertRange(0, NexonArchiveExtensionFileEntry.GetHeader(fileEntries.Count, result.Count + 4));
+            result.InsertRange(0, NexonArchiveExtensionFileEntry.GetHeader(fileEntries.Count, result.Count + 4, isNAP));
+            if (isNAP)
+            {
+                result.AddRange(NexonArchiveExtensionFileEntry.GetHeaderNAP(prePatchCRC, postPatchCRC));
+            }
             return result.ToArray();
         }
 
@@ -301,6 +386,12 @@ namespace Nexon.Extension
             result.AddRange(BitConverter.GetBytes(compressedEntriesSize ^ 0x4076551F)); // offset EoF-8; compressed file entries size.
             result.AddRange(BitConverter.GetBytes( SIGNATURE ));    // offset EoF-4; "NAR" format footer signature
             return result.ToArray();
+        }
+
+        // Add near fileEntries list
+        public void FileEntriesInternalAdd(string path, NexonArchiveFileEntryType storeType, long offset, long storeSize, long fileSize, DateTime lastModifiedTime, uint checksum)
+        {
+            fileEntries.Add(new NexonArchiveExtensionFileEntry(path, storeType, offset, storeSize, fileSize, lastModifiedTime, checksum));
         }
     }
 }

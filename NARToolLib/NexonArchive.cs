@@ -34,6 +34,10 @@ namespace Nexon
         private Stream stream;
         private List<NexonArchiveFileEntry> fileEntries = new List<NexonArchiveFileEntry>();
 
+        private uint prePatchCRC;
+        private uint postPatchCRC;
+        private bool hasPatchInfo;
+
         #endregion
 
         #region Constructors
@@ -46,7 +50,7 @@ namespace Nexon
 
         #region Properties
 
-        internal Stream Stream
+        public Stream Stream
         {
             get { return this.stream; }
         }
@@ -54,6 +58,21 @@ namespace Nexon
         public ReadOnlyCollection<NexonArchiveFileEntry> FileEntries
         {
             get { return this.fileEntries.AsReadOnly(); }
+        }
+
+        public bool HasPatchInfo
+        {
+            get { return hasPatchInfo; }
+        }
+
+        public uint PrePatchCRC
+        {
+            get { return prePatchCRC; }
+        }
+
+        public uint PostPatchCRC
+        {
+            get { return postPatchCRC; }
         }
 
         #endregion
@@ -172,8 +191,9 @@ namespace Nexon
                     int size = BitConverter.ToInt32(header, entryOffset + 4); // size for more data
                     System.Diagnostics.Debug.Assert((entryOffset + size + 12) == header.Length);
                     int unk4 = BitConverter.ToInt32(header, entryOffset + 8); // always 0
-                    uint oldchecksum = BitConverter.ToUInt32(header, entryOffset + 12); // old checksum (from NAP file)
-                    uint newchecksum = BitConverter.ToUInt32(header, entryOffset + 16); // new checksum (from NAR file after patch)
+                    this.prePatchCRC = BitConverter.ToUInt32(header, entryOffset + 12); // old checksum (NAR file before patch)
+                    this.postPatchCRC = BitConverter.ToUInt32(header, entryOffset + 16); // new checksum (NAR file after patch)
+                    this.hasPatchInfo = true;
                     int moreData = BitConverter.ToInt32(header, entryOffset + 20); // more data
                     entryOffset += 24;
 
@@ -199,6 +219,10 @@ namespace Nexon
             this.fileEntries.Clear();
             stream.Close();
             stream = null;
+
+            this.hasPatchInfo = false;
+            this.prePatchCRC = 0;
+            this.postPatchCRC = 0;
         }
 
         public void Dispose()

@@ -64,6 +64,11 @@ namespace Nexon
             get { return this.storedType; }
         }
 
+        public long Offset
+        {
+            get { return this.offset; }
+        }
+
         public long CompressedSize
         {
             get { return this.storedSize; }

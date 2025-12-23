@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Packager", "NARPackager\Pac
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ModelEncryptor", "ModelEncryptor\ModelEncryptor.csproj", "{CA9F4815-1365-4D41-8AA7-F1C61D45E718}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Patcher", "NARPatcher\Patcher.csproj", "{52052CF7-28DB-9D10-AD03-3454C4906156}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +53,10 @@ Global
 		{CA9F4815-1365-4D41-8AA7-F1C61D45E718}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA9F4815-1365-4D41-8AA7-F1C61D45E718}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA9F4815-1365-4D41-8AA7-F1C61D45E718}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52052CF7-28DB-9D10-AD03-3454C4906156}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52052CF7-28DB-9D10-AD03-3454C4906156}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52052CF7-28DB-9D10-AD03-3454C4906156}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52052CF7-28DB-9D10-AD03-3454C4906156}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

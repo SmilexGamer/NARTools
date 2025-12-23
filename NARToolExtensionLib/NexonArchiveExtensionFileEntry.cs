@@ -8,9 +8,14 @@ namespace Nexon.Extension
     public sealed class NexonArchiveExtensionFileEntry
     {
         /// <summary>
-        /// The file entry version.
+        /// The NAR file entry version.
         /// </summary>
-        public static readonly int VERSION = 1;
+        public static readonly int VERSION_NAR = 1;
+
+        /// <summary>
+        /// The NAP file entry version.
+        /// </summary>
+        public static readonly int VERSION_NAP = 2;
 
         /// <summary>
         /// The absolute file path started from archive root directory.
@@ -94,18 +99,38 @@ namespace Nexon.Extension
         /// Returns a byte array represents file entry header signature.
         /// </summary>
         /// <param name="counts">The file entry counts.</param>
+        /// <param name="directorySize">The directory size.</param>
+        /// <param name="isNAP">Writes version as a NAP file if set to true.</param>
         /// <returns></returns>
-        public static byte[] GetHeader(int counts, int directorySize)
+        public static byte[] GetHeader(int counts, int directorySize, bool isNAP = false)
         {
             if (counts < 0)
                 throw new InvalidDataException("Directory entry count is too large.");
 
             List<byte> result = new List<byte>();
-            result.AddRange(BitConverter.GetBytes( VERSION ));  // offset 0; version
+            result.AddRange(BitConverter.GetBytes( isNAP ? VERSION_NAP : VERSION_NAR ));  // offset 0; version
             result.AddRange(BitConverter.GetBytes((int) 0));    // offset 4; unknown
             result.AddRange(BitConverter.GetBytes(directorySize));    // offset 8; directorySize
             result.AddRange(BitConverter.GetBytes((int) 1));    // offset 12; unknown
             result.AddRange(BitConverter.GetBytes(counts));     // offset 16; entry counts
+            return result.ToArray();
+        }
+
+        /// <summary>
+        /// Returns a byte array represents file entry header signature of a NAP file.
+        /// </summary>
+        /// <param name="prePatchCRC">The checksum of the NAR file before the patch.</param>
+        /// <param name="postPatchCRC">The checksum of the NAR file after the patch.</param>
+        /// <returns></returns>
+        public static byte[] GetHeaderNAP(uint prePatchCRC, uint postPatchCRC)
+        {
+            List<byte> result = new List<byte>();
+            result.AddRange(BitConverter.GetBytes((int)1));  // offset 0; unknown
+            result.AddRange(BitConverter.GetBytes((int)12));    // offset 4; size for more data
+            result.AddRange(BitConverter.GetBytes((int)0));    // offset 8; unknown
+            result.AddRange(BitConverter.GetBytes(prePatchCRC));    // offset 12; old checksum (NAR file before patch)
+            result.AddRange(BitConverter.GetBytes(postPatchCRC));     // offset 16; new checksum (NAR file after patch)
+            result.AddRange(BitConverter.GetBytes((int)0));     // offset 16; more data
             return result.ToArray();
         }
     }

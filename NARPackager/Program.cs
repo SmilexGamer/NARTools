@@ -17,7 +17,7 @@ namespace Nexon.Packager
         {
             if (args.Length <= 0)
             {
-                Console.WriteLine("Usage: Packager.exe <Folder Name> <Store Type: 0 - Raw, 1 - Encoded, 2 - Encoded and Compressed. Default: Encoded) <Compression Level: 0 - Fastest, 1 - Fast, 2 - Normal, 3 - Slow, 4 - Slowest>");
+                Console.WriteLine("Usage: Packager.exe <Folder Name> [Store Type: 0 - Raw, 1 - Encoded, 2 - Encoded and Compressed. Default: Encoded] [Compression Level: 0 - Fastest, 1 - Fast, 2 - Normal, 3 - Slow, 4 - Slowest. Default: Normal]");
                 Console.In.ReadLine();
                 return;
             }
