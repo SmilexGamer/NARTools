@@ -255,6 +255,17 @@ namespace Nexon.Extension
             }
         }
 
+        public void RollbackLastEntry(long previousTempLength)
+        {
+            if (fileEntries.Count == 0)
+                return;
+
+            fileEntries.RemoveAt(fileEntries.Count - 1);
+
+            TempFile.SetLength(previousTempLength);
+            TempFile.Position = previousTempLength;
+        }
+
 
         /// <param name="isNAP">Writes archive as a NAP file if set to true.</param>
         /// <param name="prePatchCRC">The checksum of the NAR file before the patch.</param>

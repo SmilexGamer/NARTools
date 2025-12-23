@@ -33,6 +33,8 @@ namespace Nexon.Patcher
             if (args.Length >= 4)
                 compressionLevel = (NexonArchiveFileCompressionLevel)int.Parse(args[3]);
 
+            DateTime startTime = DateTime.Now;
+
             if (Directory.Exists(secondArg))
             {
                 BuildNap(baseNarPath, secondArg);
@@ -45,6 +47,11 @@ namespace Nexon.Patcher
             {
                 throw new ArgumentException("Second argument must be a patch folder or a NAP file.");
             }
+
+            DateTime endTime = DateTime.Now;
+
+            Console.WriteLine("Done! Patching time: " + (endTime - startTime));
+            Console.In.ReadLine();
         }
 
         private static void BuildNap(string baseNarPath, string patchFolder)
@@ -53,19 +60,37 @@ namespace Nexon.Patcher
             var baseNar = new NexonArchive();
             baseNar.Load(baseNarPath, false);
 
+            string patchRoot = Path.GetFileName(Path.GetFullPath(patchFolder).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+
+            HashSet<string> narRoots = baseNar.FileEntries.Select(e => e.Path.Split('/', StringSplitOptions.RemoveEmptyEntries).First()).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (!narRoots.Contains(patchRoot))
+            {
+                Console.WriteLine($"ERROR: Patch folder '{patchRoot}' does not exist in the NAR.");
+                Console.WriteLine("Valid roots:");
+                foreach (var r in narRoots)
+                    Console.WriteLine($"  /{r}/");
+                return;
+            }
+
             uint prePatchCRC = CalculateArchiveCRC(baseNar);
             Console.WriteLine($"Pre-patch CRC: {prePatchCRC:X8}");
-            Console.WriteLine("============================================");
             Console.WriteLine("Creating NAP...");
-            Console.WriteLine("============================================");
-
-            string parentPath = Directory.GetParent(patchFolder).FullName;
 
             string napPath = Path.GetFileNameWithoutExtension(baseNarPath) + ".nap";
+            Dictionary<string, uint> baseChecksums = baseNar.FileEntries.ToDictionary(e => e.Path, e => (uint)e.Checksum, StringComparer.OrdinalIgnoreCase);
 
             using (var nap = new NexonArchiveExtension(napPath))
             {
-                AddFolderToArchive(nap, patchFolder, parentPath);
+                AddFolderToArchive(nap, patchFolder, patchRoot, baseChecksums);
+
+                if (nap.FileEntries.Count == 0)
+                {
+                    Console.WriteLine("All files are identical.");
+                    Console.WriteLine("NAP was not created.");
+                    return;
+                }
+
                 nap.Save(true, true, prePatchCRC);
             }
 
@@ -100,9 +125,7 @@ namespace Nexon.Patcher
 
         private static void ApplyNap(string baseNarPath, string napPath)
         {
-            Console.WriteLine("============================================");
             Console.WriteLine("Applying NAP...");
-            Console.WriteLine("============================================");
 
             var baseNar = new NexonArchive();
             baseNar.Load(baseNarPath, false);
@@ -162,11 +185,12 @@ namespace Nexon.Patcher
             }
         }
 
-        private static void AddFolderToArchive(NexonArchiveExtension archive, string folder, string parentPath)
+        private static void AddFolderToArchive(NexonArchiveExtension archive, string folder, string patchRoot, Dictionary<string, uint> baseChecksums)
         {
             foreach (string file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories))
             {
-                string path = NormalizePath(file, parentPath);
+                string relative = Path.GetRelativePath(folder, file).Replace('\\', '/');
+                string path = "/" + patchRoot + "/" + relative;
 
                 Console.WriteLine("--------------------------------------------");
                 Console.WriteLine($"Processing file '{file}'.");
@@ -177,19 +201,32 @@ namespace Nexon.Patcher
                     Console.WriteLine($"Compression Level: {compressionLevel}");
                 }
 
+                long tempOffsetBefore = archive.TempFile.Length;
+
+                NexonArchiveExtensionFileEntry entry;
                 using (FileStream fs = File.OpenRead(file))
                 {
-                    archive.Add(fs, path, storeType, File.GetLastWriteTime(file), compressionLevel);
+                    entry = archive.Add(fs, path, storeType, File.GetLastWriteTime(file), compressionLevel);
+                }
+
+                uint newCRC = entry.Checksum;
+
+                if (baseChecksums.TryGetValue(path, out uint oldCRC))
+                {
+                    if (oldCRC == newCRC)
+                    {
+                        Console.WriteLine($"CRC did not change. Ignoring.");
+
+                        archive.RollbackLastEntry(tempOffsetBefore);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"CRC changed: {oldCRC:X8} → {newCRC:X8}");
+                    }
                 }
 
                 Console.WriteLine("--------------------------------------------");
             }
-        }
-
-        private static string NormalizePath(string file, string parent)
-        {
-            string p = file.Replace(parent, "").Replace('\\', '/');
-            return p.StartsWith("/") ? p : "/" + p;
         }
 
         private static void CopyRawEntry(NexonArchive source, NexonArchiveExtension dest, NexonArchiveFileEntry entry)
