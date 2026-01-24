@@ -89,7 +89,11 @@ namespace Nexon.Packager
             var fileInfo = new FileInfo(path);
             using (FileStream inStream = fileInfo.OpenRead())
             {
-                var entry = archive.Add(inStream, "/" + path.Replace(parentPath, "").Replace('\\', '/'), storeType, fileInfo.LastWriteTime, compressionLevel);
+                path = path.Replace(parentPath, "").Replace('\\', '/');
+                if (path[0] != '/')
+                    path = '/' + path;
+
+                var entry = archive.Add(inStream, path, storeType, fileInfo.LastWriteTime, compressionLevel);
                 Console.WriteLine("Path: {0}", entry.Path);
                 Console.WriteLine("Type: {0}", entry.StoreType);
                 if (storeType == NexonArchiveFileEntryType.EncodedAndCompressed)
